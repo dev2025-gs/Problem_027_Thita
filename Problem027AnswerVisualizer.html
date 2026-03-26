@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Valid Parentheses – Visualizer</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background: #f5f7fa;
+        padding: 20px;
+      }
+      h1 {
+        margin-bottom: 5px;
+      }
+      input {
+        width: 400px;
+        padding: 8px;
+        font-size: 16px;
+      }
+      button {
+        padding: 8px 14px;
+        font-size: 16px;
+        cursor: pointer;
+        margin-left: 8px;
+      }
+      #stack {
+        display: flex;
+        align-items: flex-end;
+        height: 80px;
+        margin-top: 30px;
+        border-left: 2px solid #333;
+        border-bottom: 2px solid #333;
+        padding: 10px;
+        gap: 6px;
+        min-height: 80px;
+        background: #fff;
+      }
+      .stack-item {
+        width: 40px;
+        height: 40px;
+        background: steelblue;
+        color: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+        border-radius: 6px;
+        margin-right: 4px;
+        position: relative;
+      }
+      .stack-item.pop {
+        background: crimson;
+        animation: pop 0.5s;
+      }
+      @keyframes pop {
+        0% { transform: scale(1.2); }
+        100% { transform: scale(1); }
+      }
+      #input-str {
+        font-size: 22px;
+        margin-top: 20px;
+        letter-spacing: 2px;
+      }
+      .current {
+        color: orange;
+        font-weight: bold;
+        text-decoration: underline;
+      }
+      #info {
+        margin-top: 20px;
+        font-size: 18px;
+      }
+      #result {
+        margin-top: 20px;
+        font-size: 22px;
+        font-weight: bold;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Valid Parentheses – Animation</h1>
+    <p>Enter string of brackets (e.g., ()[]{})</p>
+    <input id="input" value="()[]{}" />
+    <button onclick="start()">Start Animation</button>
+    <button onclick="step()" id="stepBtn" disabled>Step</button>
+    <div id="input-str"></div>
+    <div id="stack"></div>
+    <div id="info"></div>
+    <div id="result"></div>
+    <script>
+      let s = "", stack = [], i = 0, steps = [], finished = false;
+      const mapping = { ')': '(', ']': '[', '}': '{' };
+
+      function start() {
+        s = document.getElementById("input").value.trim();
+        stack = [];
+        i = 0;
+        steps = [];
+        finished = false;
+        document.getElementById("result").textContent = "";
+        document.getElementById("info").textContent = "";
+        document.getElementById("stepBtn").disabled = false;
+        buildSteps();
+        draw();
+      }
+
+      function buildSteps() {
+        // Precompute all steps for animation
+        steps = [];
+        let tempStack = [];
+        for (let idx = 0; idx < s.length; idx++) {
+          const char = s[idx];
+          let action = "";
+          let info = "";
+          let valid = true;
+          if ('([{'.includes(char)) {
+            tempStack.push(char);
+            action = `Push '${char}' to stack`;
+            info = `Opening bracket '${char}' found.`;
+          } else {
+            if (tempStack.length === 0) {
+              action = `Stack empty, expected '${mapping[char]}' for '${char}'`;
+              info = `No matching opening bracket for '${char}'.`;
+              valid = false;
+            } else {
+              const top = tempStack.pop();
+              if (mapping[char] !== top) {
+                action = `Top of stack '${top}' does not match '${char}'`;
+                info = `Bracket mismatch: expected '${mapping[char]}', found '${top}'.`;
+                valid = false;
+              } else {
+                action = `Pop '${top}' from stack for '${char}'`;
+                info = `Closing bracket '${char}' matches top of stack.`;
+              }
+            }
+          }
+          steps.push({ idx, char, stack: [...tempStack], action, info, valid });
+          if (!valid) break;
+        }
+        // Final step: check if stack is empty
+        steps.push({
+          idx: s.length,
+          char: '',
+          stack: [...tempStack],
+          action: 'Check if stack is empty',
+          info: tempStack.length === 0 ? 'Stack is empty. String is valid.' : 'Stack is not empty. String is invalid.',
+          valid: tempStack.length === 0
+        });
+      }
+
+      function step() {
+        if (finished) return;
+        if (i < steps.length) {
+          draw();
+          i++;
+        }
+        if (i >= steps.length) {
+          finished = true;
+          document.getElementById("stepBtn").disabled = true;
+          document.getElementById("result").textContent = steps[steps.length-1].valid ? "✅ Valid!" : "❌ Invalid!";
+        }
+      }
+
+      function draw() {
+        // Draw input string with current character highlighted
+        let strHtml = '';
+        for (let idx = 0; idx < s.length; idx++) {
+          if (idx === steps[i]?.idx) {
+            strHtml += `<span class='current'>${s[idx]}</span>`;
+          } else {
+            strHtml += s[idx];
+          }
+        }
+        document.getElementById("input-str").innerHTML = strHtml;
+        // Draw stack
+        const stackDiv = document.getElementById("stack");
+        stackDiv.innerHTML = '';
+        (steps[i]?.stack || []).forEach((item, idx) => {
+          const div = document.createElement('div');
+          div.className = 'stack-item';
+          div.textContent = item;
+          stackDiv.appendChild(div);
+        });
+        // Info
+        document.getElementById("info").innerHTML = `<strong>Step ${i+1}:</strong> ${steps[i]?.action || ''}<br>${steps[i]?.info || ''}`;
+      }
+    </script>
+  </body>
+</html>
